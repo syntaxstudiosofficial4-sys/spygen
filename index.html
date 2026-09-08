@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spygen — a social network shaped like water</title>
+<meta name="description" content="Spygen replaces feeds, likes and followers with tides, echoes and moorings — a slower social network built from real exchange.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;1,9..144,450&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0620;
+    --deep:#150c33;
+    --panel:#1d1044;
+    --line:#3a2570;
+    --foam:#f7f1ff;
+    --foam-dim:#c8b8ec;
+    --glow:#ff4fd8;
+    --glow-dim:#a23fa0;
+    --cyan:#2fe6ff;
+    --cyan-dim:#1c8fa3;
+    --lantern:#ffcb47;
+    --violet:#8b5cf6;
+    --grad-1: linear-gradient(120deg, var(--glow), var(--violet) 45%, var(--cyan) 100%);
+    --grad-2: linear-gradient(90deg, var(--cyan), var(--glow));
+    --radius-bottle: 28px 28px 10px 10px;
+    --maxw: 1180px;
+    --serif: 'Fraunces', serif;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--ink);
+    color: var(--foam);
+    font-family: var(--sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  h1,h2,h3{ font-family: var(--serif); font-weight: 450; margin: 0; color: var(--foam); }
+  p{ margin: 0; }
+  a{ color: inherit; }
+  button{ font-family: var(--sans); }
+
+  .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 0 28px; position:relative; z-index:2; }
+
+  /* ---------- aurora backdrop (whole page) ---------- */
+  .aurora{
+    position: fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+    animation: hueCycle 40s linear infinite;
+  }
+  .aurora span{
+    position:absolute; border-radius:50%; filter: blur(80px); opacity:0.28;
+    will-change: transform; mix-blend-mode: screen;
+  }
+  .aurora .b1{ width:560px; height:560px; background: var(--glow); top:-160px; left:-120px; animation: drift1 26s ease-in-out infinite; }
+  .aurora .b2{ width:480px; height:480px; background: var(--lantern); bottom:-180px; right:-100px; opacity:0.22; animation: drift2 32s ease-in-out infinite; }
+  .aurora .b3{ width:420px; height:420px; background: var(--cyan); top:38%; left:58%; opacity:0.24; animation: drift3 22s ease-in-out infinite; }
+  .aurora .b4{ width:360px; height:360px; background: var(--violet); top:65%; left:10%; opacity:0.22; animation: drift2 28s ease-in-out infinite reverse; }
+  .aurora .b5{ width:320px; height:320px; background: var(--cyan); top:5%; left:75%; opacity:0.18; animation: drift3 34s ease-in-out infinite; }
+  @keyframes drift1{ 0%,100%{ transform: translate(0,0); } 50%{ transform: translate(60px, 90px); } }
+  @keyframes drift2{ 0%,100%{ transform: translate(0,0); } 50%{ transform: translate(-70px,-50px); } }
+  @keyframes drift3{ 0%,100%{ transform: translate(0,0) scale(1); } 50%{ transform: translate(-40px,70px) scale(1.15); } }
+  @keyframes hueCycle{ 0%{ filter: hue-rotate(0deg);} 100%{ filter: hue-rotate(360deg);} }
+
+  .cursor-glow{
+    position: fixed; top:0; left:0; width:420px; height:420px; z-index:1; pointer-events:none;
+    background: radial-gradient(circle, rgba(255,79,216,0.16), rgba(47,230,255,0.08) 45%, transparent 70%);
+    transform: translate(-50%,-50%);
+    will-change: transform; transition: opacity 0.3s ease;
+  }
+
+  .ticker{
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    background: var(--deep); overflow:hidden; padding: 14px 0; position:relative; z-index:1;
+  }
+  .ticker-track{
+    display:flex; gap: 48px; white-space:nowrap; width: max-content;
+    animation: tickerScroll 26s linear infinite;
+  }
+  .ticker-track span{
+    font-family: var(--serif); font-size: 1.1rem; display:flex; align-items:center; gap:12px;
+    background: var(--grad-1); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .ticker-track span::after{ content:"~"; color: var(--foam-dim); -webkit-text-fill-color: var(--foam-dim); margin-left: 36px; }
+  @keyframes tickerScroll{ from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
+
+  /* skip link */
+  .skip-link{
+    position: absolute; left: -999px; top: 0; z-index: 300;
+    background: var(--glow); color: var(--ink); padding: 12px 18px;
+    border-radius: 0 0 10px 0; font-weight: 600;
+  }
+  .skip-link:focus{ left: 0; }
+
+  :focus-visible{ outline: 2px solid var(--glow); outline-offset: 3px; }
+
+  /* ---------- NAV ---------- */
+  header.site{
+    position: sticky; top:0; z-index: 100;
+    background: rgba(8,22,32,0.82);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 28px;
+    max-width: var(--maxw); margin: 0 auto;
+  }
+  .wordmark{
+    font-family: var(--serif); font-size: 1.5rem; letter-spacing: 0.02em;
+    display:flex; align-items:center; gap:10px; text-decoration:none;
+  }
+  .wordmark svg{ width:22px; height:22px; }
+  .wordmark svg path{ animation: pulseWave 4s ease-in-out infinite; transform-origin: center; }
+  .brand-text{
+    background: var(--grad-1); background-size: 200% auto;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: gradShift 5s ease-in-out infinite;
+  }
+  @keyframes pulseWave{ 0%,100%{ opacity:1; } 50%{ opacity:0.45; } }
+  .nav-links{ display:flex; gap: 30px; list-style:none; margin:0; padding:0; }
+  .nav-links a{ text-decoration:none; color: var(--foam-dim); font-size: 0.95rem; position:relative; }
+  .nav-links a:not(.nav-cta)::after{
+    content:""; position:absolute; left:0; bottom:-4px; width:0; height:1px; background: var(--glow);
+    transition: width 0.25s ease;
+  }
+  .nav-links a:not(.nav-cta):hover::after{ width:100%; }
+  .nav-links a:hover{ color: var(--foam); }
+  .nav-cta{
+    background: transparent; border: 1px solid var(--glow-dim); color: var(--glow);
+    padding: 9px 18px; border-radius: 999px; font-size: 0.9rem; cursor:pointer;
+    text-decoration:none; transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .nav-cta:hover{ border-color: var(--glow); background: rgba(255,79,216,0.08); transform: translateY(-1px); }
+  .nav-toggle{ display:none; background:none; border:1px solid var(--line); color: var(--foam); border-radius:8px; padding:8px 10px; cursor:pointer; }
+
+  @media (max-width: 760px){
+    .nav-links{
+      position:absolute; top: 100%; left:0; right:0;
+      flex-direction:column; background: var(--deep); border-bottom: 1px solid var(--line);
+      padding: 18px 28px; gap: 16px; display:none;
+    }
+    .nav-links.open{ display:flex; }
+    .nav-toggle{ display:inline-block; }
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{ position: relative; overflow:hidden; padding: 90px 0 70px; min-height: 88vh; display:flex; align-items:center; }
+  #heroScene{ position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+  .hero::before{
+    content:""; position:absolute; inset:0; z-index:1;
+    background: linear-gradient(180deg, rgba(8,22,32,0.15) 0%, rgba(8,22,32,0.55) 70%, var(--ink) 100%);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; z-index:2; display:grid; grid-template-columns: 1.15fr 0.85fr; gap: 50px; align-items:end; }
+
+  .reveal{ opacity:0; transform: translateY(22px); }
+  .hero .reveal{ transition: opacity 0.9s cubic-bezier(.2,.7,.2,1), transform 0.9s cubic-bezier(.2,.7,.2,1); }
+  body.loaded .hero .reveal{ opacity:1; transform: translateY(0); }
+  body.loaded .hero .r1{ transition-delay: 0.05s; }
+  body.loaded .hero .r2{ transition-delay: 0.22s; }
+  body.loaded .hero .r3{ transition-delay: 0.38s; }
+  body.loaded .hero .r4{ transition-delay: 0.55s; }
+
+  .eyebrow-row{ display:flex; align-items:center; gap:10px; color: var(--glow); font-size:0.9rem; margin-bottom: 22px; }
+  .eyebrow-row .dot{ width:7px; height:7px; border-radius:50%; background: var(--glow); box-shadow: 0 0 10px var(--glow); animation: blink 2.4s ease-in-out infinite; }
+  @keyframes blink{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+  .hero h1{ font-size: clamp(2.4rem, 4.6vw, 3.8rem); line-height:1.12; max-width: 16ch; font-weight: 450; }
+  .hero h1 .grad{
+    background: var(--grad-1); background-size: 200% auto;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: gradShift 6s ease-in-out infinite;
+  }
+  @keyframes gradShift{ 0%,100%{ background-position: 0% center; } 50%{ background-position: 100% center; } }
+  .hero p.lede{ margin-top: 22px; max-width: 46ch; color: var(--foam-dim); font-size: 1.08rem; }
+  .hero-ctas{ margin-top: 34px; display:flex; gap:16px; flex-wrap:wrap; }
+  .btn-primary{
+    background: var(--glow); color: var(--ink); border:none; padding: 14px 26px;
+    border-radius: 999px; font-weight:600; cursor:pointer; font-size:0.98rem;
+    text-decoration:none; display:inline-block; transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .btn-primary:hover{ background:#89f0d6; transform: translateY(-2px); box-shadow: 0 10px 26px rgba(255,79,216,0.25); }
+  .btn-ghost{
+    background:transparent; border:1px solid var(--line); color: var(--foam);
+    padding: 14px 26px; border-radius: 999px; cursor:pointer; font-size:0.98rem;
+    text-decoration:none; display:inline-block; transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .btn-ghost:hover{ border-color: var(--foam-dim); transform: translateY(-2px); }
+
+  .hero-card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border: 1px solid var(--line); border-radius: 20px; padding: 26px;
+    backdrop-filter: blur(6px);
+    transition: transform 0.35s ease;
+  }
+  .hero-card .tide-state{ font-size:0.82rem; color: var(--glow); letter-spacing:0.03em; }
+  .hero-card h3{ font-size:1.2rem; margin-top:8px; }
+  .hero-card p{ color: var(--foam-dim); font-size:0.92rem; margin-top:10px; }
+  .mini-ripple{ margin-top:18px; display:flex; align-items:center; gap:10px; color:var(--foam-dim); font-size:0.85rem; }
+  .mini-ripple svg circle:last-child{ animation: ringPulse 2.6s ease-out infinite; transform-origin:center; }
+  @keyframes ringPulse{ 0%{ opacity:0.6; transform: scale(0.8);} 100%{ opacity:0; transform: scale(1.6);} }
+
+  .scroll-cue{ position:absolute; left:50%; bottom:26px; transform:translateX(-50%); z-index:2; color: var(--foam-dim); font-size:0.78rem; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .scroll-cue .line{ width:1px; height:28px; background: linear-gradient(var(--glow), transparent); animation: cueDrop 1.8s ease-in-out infinite; }
+  @keyframes cueDrop{ 0%{ opacity:0.2; transform: scaleY(0.4); transform-origin:top;} 50%{ opacity:1; transform: scaleY(1); transform-origin:top;} 100%{ opacity:0.2; transform: scaleY(0.4); transform-origin:top;} }
+
+  /* ---------- SECTION SHARED ---------- */
+  section{ padding: 88px 0; border-top: 1px solid var(--line); position:relative; z-index:1; }
+  .section-head{ max-width: 640px; margin-bottom: 48px; }
+  .kicker{ color: var(--glow); font-size: 0.85rem; margin-bottom:14px; }
+  .section-head h2{ font-size: clamp(1.7rem, 3vw, 2.3rem); }
+  .section-head p{ color: var(--foam-dim); margin-top: 16px; font-size: 1.02rem; }
+
+  [data-reveal]{
+    opacity:0; transform: translateY(26px);
+    transition: opacity 0.7s cubic-bezier(.2,.7,.2,1), transform 0.7s cubic-bezier(.2,.7,.2,1);
+  }
+  [data-reveal].in-view{ opacity:1; transform: translateY(0); }
+
+  /* ---------- CONCEPT: compare ---------- */
+  .compare{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-bottom: 60px;
+  }
+  .compare .col{ border: 1px solid var(--line); border-radius: 18px; padding: 28px; transition: transform 0.3s ease, border-color 0.3s ease; }
+  .compare .col.old{ background: rgba(255,255,255,0.015); }
+  .compare .col.new{ background: rgba(255,79,216,0.05); border-color: var(--glow-dim); }
+  .compare .col:hover{ transform: translateY(-4px); }
+  .compare h3{ font-size: 1.05rem; font-family: var(--sans); font-weight:600; margin-bottom:16px; }
+  .compare .col.old h3{ color: var(--foam-dim); }
+  .compare .col.new h3{ color: var(--glow); }
+  .compare ul{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
+  .compare li{ font-size:0.94rem; color: var(--foam-dim); padding-left: 18px; position:relative; }
+  .compare li::before{ content:"–"; position:absolute; left:0; color: var(--foam-dim); }
+  .compare .col.new li::before{ content:"~"; color: var(--glow); }
+  .compare .col.new li{ color: var(--foam); }
+
+  .mechanics{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 20px; perspective: 900px; }
+  .mech-card{
+    border:1px solid var(--line); border-radius:18px; padding:24px; background: rgba(255,255,255,0.02);
+    transform-style: preserve-3d; transition: transform 0.12s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
+    will-change: transform;
+  }
+  .mech-card:hover{ border-color: var(--glow-dim); box-shadow: 0 18px 40px rgba(0,0,0,0.35); }
+  .mech-card svg{ width:34px; height:34px; margin-bottom: 18px; color: var(--glow); transform: translateZ(24px); }
+  .mech-card h3{ font-size: 1.05rem; font-family: var(--sans); font-weight:600; margin-bottom:10px; transform: translateZ(18px); }
+  .mech-card p{ font-size:0.9rem; color: var(--foam-dim); transform: translateZ(12px); }
+
+  @media (max-width: 900px){
+    .compare{ grid-template-columns: 1fr; }
+    .mechanics{ grid-template-columns: 1fr 1fr; }
+    .hero-inner{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px){
+    .mechanics{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- EXPERIENCE (interactive demo) ---------- */
+  .demo-shell-wrap{ position:relative; border-radius: 24px; padding: 2px; }
+  .demo-shell-wrap::before{
+    content:""; position:absolute; inset:0; border-radius:24px; z-index:0;
+    background: conic-gradient(from 0deg, var(--glow), var(--violet), var(--cyan), var(--lantern), var(--glow));
+    animation: spinBorder 8s linear infinite; opacity:0.7;
+  }
+  @keyframes spinBorder{ to{ transform: rotate(360deg); } }
+  .demo-shell{
+    position:relative; z-index:1;
+    border: 1px solid var(--line); border-radius: 22px; overflow:hidden;
+    background: var(--deep);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+  }
+  .tablist{
+    display:flex; gap:4px; padding: 10px; border-bottom: 1px solid var(--line);
+    overflow-x:auto;
+  }
+  .tab-btn{
+    background:transparent; border:none; color: var(--foam-dim); padding: 11px 18px;
+    border-radius: 12px; cursor:pointer; font-size:0.92rem; white-space:nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .tab-btn[aria-selected="true"]{ background: rgba(255,79,216,0.12); color: var(--glow); }
+  .tab-panel{ padding: 30px; display:none; }
+  .tab-panel.active{ display:block; animation: panelIn 0.4s ease; }
+  @keyframes panelIn{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+
+  .tide-header{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; flex-wrap:wrap; gap:10px;}
+  .tide-header h3{ font-size:1.2rem; }
+  .tide-header .tide-meta{ color: var(--foam-dim); font-size:0.86rem; }
+
+  .composer{ border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:26px; background: rgba(255,255,255,0.02); transition: border-color 0.2s ease; }
+  .composer:focus-within{ border-color: var(--glow-dim); }
+  .composer textarea{
+    width:100%; background:transparent; border:none; color: var(--foam); font-family: var(--sans);
+    font-size:0.98rem; resize:vertical; min-height:56px; outline:none;
+  }
+  .composer textarea::placeholder{ color: var(--foam-dim); }
+  .composer-row{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; flex-wrap:wrap; }
+  .composer select{
+    background: var(--panel); color: var(--foam); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:0.85rem;
+  }
+
+  .call-list{ display:flex; flex-direction:column; gap:16px; perspective: 1000px; }
+  .call-card{
+    border:1px solid var(--line); background: rgba(255,255,255,0.02);
+    border-radius: var(--radius-bottle);
+    padding: 20px 22px; position:relative;
+    transition: transform 0.15s ease-out, border-color 0.3s ease;
+    transform-style: preserve-3d; will-change: transform;
+  }
+  .call-card.new-call{ animation: castIn 0.55s cubic-bezier(.2,.8,.2,1); }
+  @keyframes castIn{ from{ opacity:0; transform: translateY(-16px) scale(0.98);} to{ opacity:1; transform: translateY(0) scale(1);} }
+  .call-card .call-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .call-author{ font-weight:600; font-size:0.94rem; }
+  .call-time{ color: var(--foam-dim); font-size:0.8rem; }
+  .call-text{ color: var(--foam); font-size:0.98rem; }
+  .call-foot{ display:flex; align-items:center; gap:14px; margin-top:16px; }
+  .echo-btn{
+    display:flex; align-items:center; gap:8px; background:transparent; border:1px solid var(--line);
+    color: var(--foam-dim); border-radius:999px; padding:8px 14px; font-size:0.85rem; cursor:pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+  .echo-btn:hover{ border-color: var(--glow-dim); color: var(--glow); }
+  .echo-btn:active{ transform: scale(0.96); }
+  .echo-btn svg{ width:16px; height:16px; }
+  .resonance{ font-size:0.8rem; color: var(--foam-dim); }
+  .resonance b{ color: var(--glow); font-weight:600; display:inline-block; transition: transform 0.25s ease; }
+  .resonance b.bump{ animation: bump 0.35s ease; }
+  @keyframes bump{ 0%{ transform: scale(1);} 40%{ transform: scale(1.3);} 100%{ transform: scale(1);} }
+  .ripple-wrap{ position:relative; width:16px; height:16px; }
+  .ripple{
+    position:absolute; inset:0; border-radius:50%; border: 1.5px solid var(--glow);
+    opacity:0; transform: scale(1);
+  }
+  .ripple.animate{ animation: rippleOut 0.9s ease-out forwards; }
+  @keyframes rippleOut{
+    0%{ opacity:0.9; transform: scale(1); }
+    100%{ opacity:0; transform: scale(3.2); }
+  }
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  .cove-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap:18px; perspective: 900px; }
+  .cove-card{ border:1px solid var(--line); border-radius:16px; padding:20px; background: rgba(255,255,255,0.02); transition: transform 0.15s ease-out, border-color 0.3s ease; transform-style:preserve-3d; will-change: transform; }
+  .cove-card h4{ font-family: var(--serif); font-weight:450; font-size:1.1rem; margin-bottom:8px; }
+  .cove-card p{ font-size:0.88rem; color: var(--foam-dim); min-height:44px; }
+  .cove-meta{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
+  .cove-depth{ font-size:0.78rem; color: var(--foam-dim); }
+  .cast-here{
+    background:transparent; border:1px solid var(--glow-dim); color: var(--glow);
+    border-radius:999px; padding:7px 14px; font-size:0.82rem; cursor:pointer; transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  }
+  .cast-here.joined{ background: var(--glow); color: var(--ink); border-color: var(--glow); }
+  .cast-here:active{ transform: scale(0.95); }
+  @media (max-width: 900px){ .cove-grid{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px){ .cove-grid{ grid-template-columns: 1fr; } }
+
+  .tideline-layout{ display:grid; grid-template-columns: 220px 1fr; gap:0; border:1px solid var(--line); border-radius:16px; overflow:hidden; min-height: 380px; }
+  .tl-contacts{ border-right:1px solid var(--line); background: rgba(255,255,255,0.02); }
+  .tl-contact{ width:100%; text-align:left; background:transparent; border:none; color: var(--foam-dim); padding:16px 18px; cursor:pointer; border-bottom:1px solid var(--line); font-size:0.88rem; transition: background 0.2s ease, color 0.2s ease; }
+  .tl-contact[aria-current="true"]{ color: var(--foam); background: rgba(255,79,216,0.08); }
+  .tl-contact .tl-name{ display:block; color:inherit; font-weight:600; margin-bottom:3px; }
+  .tl-conv{ padding: 22px; display:flex; flex-direction:column; }
+  .tl-msg{ max-width:70%; padding:10px 14px; border-radius:14px; margin-bottom:10px; font-size:0.92rem; animation: msgIn 0.35s ease; }
+  @keyframes msgIn{ from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform:translateY(0);} }
+  .tl-msg.them{ background: rgba(255,255,255,0.05); align-self:flex-start; }
+  .tl-msg.me{ background: rgba(255,79,216,0.14); align-self:flex-end; color: var(--foam); }
+  .tl-input-row{ margin-top:auto; display:flex; gap:10px; padding-top:16px; }
+  .tl-input-row input{ flex:1; background: rgba(255,255,255,0.03); border:1px solid var(--line); border-radius:999px; padding:10px 16px; color:var(--foam); font-size:0.9rem; }
+  .tl-input-row button{ background: var(--glow); color: var(--ink); border:none; border-radius:999px; padding:10px 18px; font-weight:600; cursor:pointer; font-size:0.85rem; transition: transform 0.15s ease; }
+  .tl-input-row button:active{ transform: scale(0.95); }
+  @media (max-width: 700px){ .tideline-layout{ grid-template-columns: 1fr; } .tl-contacts{ display:flex; overflow-x:auto; border-right:none; border-bottom:1px solid var(--line); } .tl-contact{ border-bottom:none; border-right:1px solid var(--line); white-space:nowrap; } }
+
+  .harbor{ display:grid; grid-template-columns: 260px 1fr; gap: 30px; }
+  .harbor-id h3{ font-size:1.3rem; }
+  .harbor-id p{ color: var(--foam-dim); font-size:0.9rem; margin-top:8px; }
+  .depth-meter{ margin-top:20px; }
+  .depth-meter .label{ font-size:0.8rem; color: var(--foam-dim); margin-bottom:6px; }
+  .depth-track{ height:8px; background: rgba(255,255,255,0.06); border-radius:999px; overflow:hidden; }
+  .depth-fill{ height:100%; background: linear-gradient(90deg, var(--glow-dim), var(--glow)); width:0%; border-radius:999px; transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+  .depth-fill.filled{ width:38%; }
+  .harbor-note{ margin-top:16px; font-size:0.82rem; color: var(--foam-dim); }
+  .moored-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:14px; }
+  .moored-card{ border:1px solid var(--line); border-radius:14px; padding:16px; background: rgba(255,255,255,0.02); font-size:0.88rem; color: var(--foam-dim); transition: transform 0.2s ease, border-color 0.2s ease; }
+  .moored-card:hover{ transform: translateY(-3px); border-color: var(--glow-dim); }
+  .moored-card b{ display:block; color: var(--foam); font-weight:600; margin-bottom:6px; font-size:0.92rem; }
+  @media (max-width: 800px){ .harbor{ grid-template-columns:1fr; } .moored-grid{ grid-template-columns: 1fr; } }
+
+  /* ---------- DESIGN LANGUAGE ---------- */
+  .swatches{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom: 56px; }
+  .swatch{ width:130px; }
+  .swatch .chip{ height:80px; border-radius:12px; border:1px solid var(--line); transition: transform 0.2s ease; }
+  .swatch:hover .chip{ transform: translateY(-4px) scale(1.03); }
+  .swatch .name{ font-size:0.85rem; margin-top:8px; }
+  .swatch .hex{ font-size:0.78rem; color: var(--foam-dim); }
+
+  .type-spec{ display:grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+  .type-spec .sample-serif{ font-family: var(--serif); font-size: 2.1rem; font-weight:450; }
+  .type-spec .sample-sans{ font-family: var(--sans); font-size: 1.05rem; color: var(--foam-dim); max-width: 34ch; }
+  .type-label{ font-size:0.8rem; color: var(--glow); margin-bottom:12px; }
+  @media (max-width: 800px){ .type-spec{ grid-template-columns:1fr; } }
+
+  .a11y-list{ display:grid; grid-template-columns: repeat(2,1fr); gap: 14px; list-style:none; margin:0; padding:0; }
+  .a11y-list li{ border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:0.9rem; color: var(--foam-dim); display:flex; gap:10px; transition: border-color 0.2s ease, transform 0.2s ease; }
+  .a11y-list li:hover{ border-color: var(--glow-dim); transform: translateY(-2px); }
+  .a11y-list li svg{ flex-shrink:0; width:18px; height:18px; color: var(--glow); margin-top:2px; }
+  @media (max-width: 700px){ .a11y-list{ grid-template-columns:1fr; } }
+
+  footer{ padding: 44px 0; border-top:1px solid var(--line); position:relative; z-index:1; }
+  .foot-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+  footer p{ color: var(--foam-dim); font-size:0.85rem; }
+</style>
+</head>
+<body>
+
+<div class="aurora" aria-hidden="true"><span class="b1"></span><span class="b2"></span><span class="b3"></span><span class="b4"></span><span class="b5"></span></div>
+<div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<header class="site">
+  <nav class="nav" aria-label="Primary">
+    <a href="#top" class="wordmark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 15c2 1.6 4 1.6 6 0s4-1.6 6 0 4 1.6 6 0"/><path d="M2 10c2 1.6 4 1.6 6 0s4-1.6 6 0 4 1.6 6 0"/></svg>
+      <span class="brand-text">Spygen</span>
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="navLinks" id="navToggleBtn">Menu</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#concept">Concept</a></li>
+      <li><a href="#experience">Try it</a></li>
+      <li><a href="#design">Design</a></li>
+      <li><a href="#experience" class="nav-cta">Enter the Sound</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top">
+    <canvas id="heroScene" aria-hidden="true"></canvas>
+    <div class="wrap hero-inner">
+      <div>
+        <div class="eyebrow-row reveal r1"><span class="dot"></span> A social network shaped like water</div>
+        <h1 class="reveal r2">Some conversations should <span class="grad">ripple, not scroll</span>.</h1>
+        <p class="lede reveal r3">Spygen replaces feeds, likes and followers with tides, echoes and moorings — a slower network built from real exchange instead of attention.</p>
+        <div class="hero-ctas reveal r4">
+          <a href="#experience" class="btn-primary">Step into the Sound</a>
+          <a href="#concept" class="btn-ghost">Read the concept</a>
+        </div>
+      </div>
+      <div class="hero-card reveal r4">
+        <div class="tide-state">Evening tide · rising</div>
+        <h3>Today's tide holds 6 calls for you</h3>
+        <p>Not the most popular ones — the ones drifting nearest your Coves and Tide Lines right now.</p>
+        <div class="mini-ripple">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" opacity="0.5"/></svg>
+          No counters. Depth is felt, not displayed.
+        </div>
+      </div>
+    </div>
+    <div class="scroll-cue" aria-hidden="true"><span>Scroll</span><span class="line"></span></div>
+  </section>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span>Calls</span><span>Echoes</span><span>Coves</span><span>Moorings</span><span>Tide Lines</span><span>Your Harbor</span>
+      <span>Calls</span><span>Echoes</span><span>Coves</span><span>Moorings</span><span>Tide Lines</span><span>Your Harbor</span>
+    </div>
+  </div>
+
+  <section id="concept">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <div class="kicker">The problem with the feed</div>
+        <h2>Most networks are built to be endless. Spygen is built to end.</h2>
+        <p>Infinite scroll, public counters and algorithmic ranking reward volume over meaning. Spygen is designed around water instead of a pipe — content arrives on a tide, reactions ripple privately, and relationships form only through real back-and-forth.</p>
+      </div>
+
+      <div class="compare" data-reveal>
+        <div class="col old">
+          <h3>What most networks do</h3>
+          <ul>
+            <li>An algorithmic feed that never runs out</li>
+            <li>Public like and follower counts as status</li>
+            <li>Following someone with a single tap</li>
+            <li>Ranking content by engagement velocity</li>
+          </ul>
+        </div>
+        <div class="col new">
+          <h3>What Spygen does instead</h3>
+          <ul>
+            <li>A tide of content that refreshes twice a day, then stops</li>
+            <li>Private echoes that surface as felt depth, not numbers</li>
+            <li>Moorings that form only after real exchange</li>
+            <li>Drift physics: time, care and closeness, not virality</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mechanics">
+        <div class="mech-card tilt" data-reveal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3h8l1 4-2 2v9a3 3 0 0 1-6 0v-9L7 7z"/><path d="M8 10h8"/></svg>
+          <h3>Calls</h3>
+          <p>Small capsules of text or voice you cast into the water, aimed at the open Sound or a single Cove.</p>
+        </div>
+        <div class="mech-card tilt" data-reveal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="12" r="6.5" opacity="0.6"/><circle cx="12" cy="12" r="10.5" opacity="0.3"/></svg>
+          <h3>Echoes</h3>
+          <p>A private resonance you send back. It never shows as a count — only as how deep and far the call has drifted.</p>
+        </div>
+        <div class="mech-card tilt" data-reveal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 15c2-6 7-10 9-10s7 4 9 10c-3 2-6 3-9 3s-6-1-9-3z"/></svg>
+          <h3>Coves</h3>
+          <p>Inlets formed around a shared interest. You join by casting something in, not by subscribing.</p>
+        </div>
+        <div class="mech-card tilt" data-reveal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4v9"/><circle cx="12" cy="4" r="2"/><path d="M6 13a6 6 0 0 0 12 0"/><path d="M4 13h2M18 13h2"/></svg>
+          <h3>Moorings</h3>
+          <p>A steady connection that forms after enough back-and-forth on a Tide Line — never by a single follow tap.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="experience">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <div class="kicker">Walk through it</div>
+        <h2>A working sketch of the four screens</h2>
+        <p>This is an interactive prototype, not a mockup — cast a call, send an echo, and watch how it responds.</p>
+      </div>
+
+      <div class="demo-shell-wrap" data-reveal>
+      <div class="demo-shell">
+        <div class="tablist" role="tablist" aria-label="Spygen app screens">
+          <button class="tab-btn" role="tab" id="tab-sound" aria-selected="true" aria-controls="panel-sound">The Sound</button>
+          <button class="tab-btn" role="tab" id="tab-coves" aria-selected="false" aria-controls="panel-coves" tabindex="-1">Coves</button>
+          <button class="tab-btn" role="tab" id="tab-tidelines" aria-selected="false" aria-controls="panel-tidelines" tabindex="-1">Tide Lines</button>
+          <button class="tab-btn" role="tab" id="tab-harbor" aria-selected="false" aria-controls="panel-harbor" tabindex="-1">Your Harbor</button>
+        </div>
+
+        <!-- SOUND PANEL -->
+        <div class="tab-panel active" id="panel-sound" role="tabpanel" aria-labelledby="tab-sound">
+          <div class="tide-header">
+            <h3>Today's tide</h3>
+            <span class="tide-meta">Rising tide · refreshes at midnight and noon</span>
+          </div>
+
+          <div class="composer">
+            <label for="callInput" class="sr-only">Write a call</label>
+            <textarea id="callInput" placeholder="Cast something into the water…"></textarea>
+            <div class="composer-row">
+              <label class="sr-only" for="castTarget">Cast destination</label>
+              <select id="castTarget">
+                <option>Cast into the open Sound</option>
+                <option>Cast into Late-Night Kitchens</option>
+                <option>Cast into Slow Cinema</option>
+                <option>Cast into Unfinished Rooms</option>
+              </select>
+              <button class="btn-primary" id="castBtn" type="button">Cast</button>
+            </div>
+          </div>
+
+          <ul class="call-list" id="callList" aria-live="polite">
+            <!-- populated by JS -->
+          </ul>
+        </div>
+
+        <!-- COVES PANEL -->
+        <div class="tab-panel" id="panel-coves" role="tabpanel" aria-labelledby="tab-coves" hidden>
+          <div class="tide-header">
+            <h3>Coves near you</h3>
+            <span class="tide-meta">Join by casting, not subscribing</span>
+          </div>
+          <div class="cove-grid" id="coveGrid">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <!-- TIDE LINES PANEL -->
+        <div class="tab-panel" id="panel-tidelines" role="tabpanel" aria-labelledby="tab-tidelines" hidden>
+          <div class="tide-header">
+            <h3>Tide Lines</h3>
+            <span class="tide-meta">Private threads, opened from a call — never a follow</span>
+          </div>
+          <div class="tideline-layout">
+            <div class="tl-contacts" id="tlContacts" role="listbox" aria-label="Tide Lines"></div>
+            <div class="tl-conv" id="tlConv"></div>
+          </div>
+        </div>
+
+        <!-- HARBOR PANEL -->
+        <div class="tab-panel" id="panel-harbor" role="tabpanel" aria-labelledby="tab-harbor" hidden>
+          <div class="harbor">
+            <div class="harbor-id">
+              <h3>Reyna Voss</h3>
+              <p>Keeps calls about tidal ecology and unfinished furniture.</p>
+              <div class="depth-meter">
+                <div class="label">Depth — built from moorings, not followers</div>
+                <div class="depth-track"><div class="depth-fill" id="depthFill"></div></div>
+              </div>
+              <p class="harbor-note">4 moorings · 12 calls moored · no public follower count</p>
+            </div>
+            <div>
+              <div class="tide-header"><h3>Moored calls</h3><span class="tide-meta">Kept on purpose, not archived by default</span></div>
+              <div class="moored-grid">
+                <div class="moored-card"><b>From a Cove: Slow Cinema</b>"The scene where nothing happens for four minutes and it's the only part I remember."</div>
+                <div class="moored-card"><b>From a mooring: Théo</b>"Sent you the tide chart for the inlet near Ary. Same current, different hour."</div>
+                <div class="moored-card"><b>Cast into the open Sound</b>"Sanded the tabletop back to raw pine today. Leaving it bare for a season."</div>
+                <div class="moored-card"><b>From a Cove: Unfinished Rooms</b>"Half a bookshelf, still level. That counts as progress here."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="design">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <div class="kicker">Visual language</div>
+        <h2>Deep-space violet, electric tide, lantern warmth</h2>
+        <p>The palette reads as neon over open water at night: near-black violet for depth, a magenta-to-cyan glow standing in for every reaction, and a warm lantern amber kept rare, for moments that deserve warmth.</p>
+      </div>
+
+      <div class="swatches" data-reveal>
+        <div class="swatch"><div class="chip" style="background:#0a0620"></div><div class="name">Ink</div><div class="hex">#0a0620</div></div>
+        <div class="swatch"><div class="chip" style="background:#1d1044"></div><div class="name">Panel</div><div class="hex">#1d1044</div></div>
+        <div class="swatch"><div class="chip" style="background:#3a2570"></div><div class="name">Line</div><div class="hex">#3a2570</div></div>
+        <div class="swatch"><div class="chip" style="background:#f7f1ff"></div><div class="name">Foam</div><div class="hex">#f7f1ff</div></div>
+        <div class="swatch"><div class="chip" style="background:#ff4fd8"></div><div class="name">Glow</div><div class="hex">#ff4fd8</div></div>
+        <div class="swatch"><div class="chip" style="background:#2fe6ff"></div><div class="name">Cyan</div><div class="hex">#2fe6ff</div></div>
+        <div class="swatch"><div class="chip" style="background:#8b5cf6"></div><div class="name">Violet</div><div class="hex">#8b5cf6</div></div>
+        <div class="swatch"><div class="chip" style="background:#ffcb47"></div><div class="name">Lantern</div><div class="hex">#ffcb47</div></div>
+      </div>
+
+      <div class="type-spec" data-reveal>
+        <div>
+          <div class="type-label">Display — Fraunces</div>
+          <div class="sample-serif">Cast it in, let it drift.</div>
+        </div>
+        <div>
+          <div class="type-label">Interface — Inter</div>
+          <div class="sample-sans">Body and interface text stays plain and legible, so the personality lives in headlines and in water, not in every label.</div>
+        </div>
+      </div>
+
+      <div class="section-head" style="margin-bottom:24px;" data-reveal>
+        <div class="kicker">Built for every tide</div>
+        <h2 style="font-size:1.5rem;">Accessibility and responsiveness</h2>
+      </div>
+      <ul class="a11y-list" data-reveal>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12l5 5 11-11"/></svg> Every tab, button and toggle is reachable and operable by keyboard, with a visible focus ring.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12l5 5 11-11"/></svg> Reduced-motion preferences stop the 3D scene, the aurora background and every card animation.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12l5 5 11-11"/></svg> Text keeps AA contrast against ink and panel backgrounds throughout.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12l5 5 11-11"/></svg> Live regions announce echoes and new calls for screen reader users.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12l5 5 11-11"/></svg> Layout reflows from a single column on small phones up to the full four-panel demo on desktop.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12l5 5 11-11"/></svg> No content relies on color alone — icons and text carry meaning together.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div class="wordmark" style="font-size:1.1rem;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18" aria-hidden="true"><path d="M2 15c2 1.6 4 1.6 6 0s4-1.6 6 0 4 1.6 6 0"/></svg>
+      Spygen
+    </div>
+    <p>A concept prototype built for a social-innovation hackathon brief. No data leaves this page.</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------------- Nav toggle ---------------- */
+  var navToggle = document.getElementById('navToggleBtn');
+  var navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', function(){
+    var open = navLinks.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  /* ---------------- Cursor glow follower ---------------- */
+  var cursorGlow = document.getElementById('cursorGlow');
+  if (cursorGlow && !reduceMotion && window.matchMedia('(hover: hover)').matches){
+    var gx = window.innerWidth/2, gy = window.innerHeight/2, cx = gx, cy = gy;
+    window.addEventListener('mousemove', function(e){ gx = e.clientX; gy = e.clientY; });
+    (function glowLoop(){
+      cx += (gx - cx) * 0.12; cy += (gy - cy) * 0.12;
+      cursorGlow.style.transform = 'translate(' + cx + 'px,' + cy + 'px)';
+      requestAnimationFrame(glowLoop);
+    })();
+  } else if (cursorGlow){
+    cursorGlow.style.display = 'none';
+  }
+
+  /* ---------------- Confetti burst ---------------- */
+  var confettiColors = ['#ff4fd8', '#2fe6ff', '#ffcb47', '#8b5cf6'];
+  function burstConfetti(originEl){
+    if (reduceMotion) return;
+    var rect = originEl.getBoundingClientRect();
+    for (var i = 0; i < 16; i++){
+      var bit = document.createElement('span');
+      var size = 5 + Math.random() * 5;
+      bit.style.cssText = 'position:fixed;z-index:999;pointer-events:none;border-radius:2px;' +
+        'left:' + (rect.left + rect.width/2) + 'px; top:' + (rect.top + rect.height/2) + 'px;' +
+        'width:' + size + 'px; height:' + size + 'px; background:' + confettiColors[i % confettiColors.length] + ';';
+      document.body.appendChild(bit);
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 60 + Math.random() * 90;
+      var dx = Math.cos(angle) * dist, dy = Math.sin(angle) * dist - 40;
+      var anim = bit.animate([
+        { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (Math.random()*360) + 'deg)', opacity: 0 }
+      ], { duration: 700 + Math.random()*300, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      anim.onfinish = function(el){ return function(){ el.remove(); }; }(bit);
+    }
+  }
+
+  /* ---------------- Hero load-in choreography ---------------- */
+  window.addEventListener('load', function(){
+    requestAnimationFrame(function(){ document.body.classList.add('loaded'); });
+  });
+
+  /* ---------------- Scroll reveal ---------------- */
+  var revealEls = document.querySelectorAll('[data-reveal]');
+  if ('IntersectionObserver' in window && !reduceMotion){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting){
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in-view'); });
+  }
+
+  /* ---------------- 3D tilt on cards ---------------- */
+  if (!reduceMotion && window.matchMedia('(hover: hover)').matches){
+    document.querySelectorAll('.tilt, .mech-card, .cove-card, .call-card').forEach(function(card){
+      card.addEventListener('mousemove', function(e){
+        var r = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width - 0.5;
+        var py = (e.clientY - r.top) / r.height - 0.5;
+        card.style.transform = 'rotateX(' + (-py * 8) + 'deg) rotateY(' + (px * 8) + 'deg) translateY(-3px)';
+      });
+      card.addEventListener('mouseleave', function(){
+        card.style.transform = '';
+      });
+    });
+  }
+
+  /* ---------------- Three.js hero scene ---------------- */
+  var canvas = document.getElementById('heroScene');
+  var heroSection = document.getElementById('top');
+
+  function buildBottle(scale, hue){
+    var group = new THREE.Group();
+    var glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x1d1044, transparent: true, opacity: 0.4,
+      roughness: 0.1, metalness: 0.1, clearcoat: 0.8,
+      emissive: hue, emissiveIntensity: 0.35
+    });
+    var body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 1.5, 24), glassMat);
+    var shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 16), glassMat);
+    shoulder.position.y = 0.75;
+    shoulder.scale.set(1, 0.5, 1);
+    var neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.6, 16), glassMat);
+    neck.position.y = 1.05;
+    var cork = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.2, 0.22, 16),
+      new THREE.MeshStandardMaterial({ color: 0xffcb47, roughness: 0.7 })
+    );
+    cork.position.y = 1.35;
+    var glow = new THREE.PointLight(hue, 0.6, 3);
+    glow.position.set(0, 0.2, 0);
+    group.add(body, shoulder, neck, cork, glow);
+    group.scale.setScalar(scale);
+    return group;
+  }
+
+  if (canvas && window.THREE){
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0.4, 8);
+
+    scene.add(new THREE.AmbientLight(0x8b5cf6, 0.4));
+    var key = new THREE.DirectionalLight(0xf7f1ff, 0.6);
+    key.position.set(3, 5, 4);
+    scene.add(key);
+    var rim = new THREE.PointLight(0x2fe6ff, 0.8, 10);
+    rim.position.set(-4, 2, 3);
+    scene.add(rim);
+
+    var bottles = [
+      buildBottle(1.15, 0xff4fd8), buildBottle(0.85, 0x2fe6ff), buildBottle(1.0, 0xffcb47)
+    ];
+    bottles[0].position.set(-2.6, 0.4, 0);
+    bottles[1].position.set(2.4, -0.6, -1.5);
+    bottles[2].position.set(0.6, 1.1, -2.5);
+    bottles.forEach(function(b){ b.rotation.z = (Math.random() - 0.5) * 0.4; scene.add(b); });
+
+    /* rising bubble particles */
+    function circleTexture(){
+      var c = document.createElement('canvas'); c.width = c.height = 64;
+      var g = c.getContext('2d');
+      var grad = g.createRadialGradient(32,32,0,32,32,32);
+      grad.addColorStop(0, 'rgba(47,230,255,0.9)');
+      grad.addColorStop(1, 'rgba(47,230,255,0)');
+      g.fillStyle = grad; g.fillRect(0,0,64,64);
+      return new THREE.CanvasTexture(c);
+    }
+    var bubbleCount = 90;
+    var positions = new Float32Array(bubbleCount * 3);
+    var speeds = new Float32Array(bubbleCount);
+    for (var i = 0; i < bubbleCount; i++){
+      positions[i*3] = (Math.random() - 0.5) * 14;
+      positions[i*3+1] = (Math.random() - 0.5) * 8;
+      positions[i*3+2] = (Math.random() - 0.5) * 8 - 2;
+      speeds[i] = 0.004 + Math.random() * 0.008;
+    }
+    var bubbleGeo = new THREE.BufferGeometry();
+    bubbleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    var bubbleMat = new THREE.PointsMaterial({
+      size: 0.09, map: circleTexture(), transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    var bubbles = new THREE.Points(bubbleGeo, bubbleMat);
+    scene.add(bubbles);
+
+    function resize(){
+      var w = heroSection.clientWidth, h = heroSection.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    var mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', function(e){
+      mouseX = (e.clientX / window.innerWidth - 0.5);
+      mouseY = (e.clientY / window.innerHeight - 0.5);
+    });
+
+    var running = true;
+    var sceneObserver = new IntersectionObserver(function(entries){
+      running = entries[0].isIntersecting;
+    }, { threshold: 0 });
+    sceneObserver.observe(heroSection);
+    document.addEventListener('visibilitychange', function(){
+      running = running && !document.hidden;
+    });
+
+    var clock = new THREE.Clock();
+    function animate(){
+      requestAnimationFrame(animate);
+      if (!running) return;
+      var t = clock.getElapsedTime();
+
+      bottles.forEach(function(b, i){
+        b.position.y += Math.sin(t * 0.5 + i) * 0.0015;
+        b.rotation.y += 0.0025 + i * 0.0004;
+        b.rotation.z = Math.sin(t * 0.3 + i) * 0.06;
+      });
+
+      var pos = bubbleGeo.attributes.position;
+      for (var j = 0; j < bubbleCount; j++){
+        var y = pos.getY(j) + speeds[j];
+        if (y > 4.5) y = -4.5;
+        pos.setY(j, y);
+      }
+      pos.needsUpdate = true;
+
+      camera.position.x += (mouseX * 1.2 - camera.position.x) * 0.03;
+      camera.position.y += (0.4 - mouseY * 0.8 - camera.position.y) * 0.03;
+      camera.lookAt(0, 0, -1);
+
+      renderer.render(scene, camera);
+    }
+
+    if (reduceMotion){
+      renderer.render(scene, camera);
+    } else {
+      animate();
+    }
+  } else if (canvas) {
+    canvas.style.display = 'none';
+  }
+
+  /* ---------------- Tabs ---------------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  var panels = {
+    'tab-sound': document.getElementById('panel-sound'),
+    'tab-coves': document.getElementById('panel-coves'),
+    'tab-tidelines': document.getElementById('panel-tidelines'),
+    'tab-harbor': document.getElementById('panel-harbor')
+  };
+  var depthFilled = false;
+  function selectTab(tab){
+    tabs.forEach(function(t){
+      var selected = t === tab;
+      t.setAttribute('aria-selected', selected ? 'true' : 'false');
+      t.tabIndex = selected ? 0 : -1;
+      var panel = panels[t.id];
+      if (panel){
+        panel.hidden = !selected;
+        panel.classList.toggle('active', selected);
+      }
+    });
+    tab.focus();
+    if (tab.id === 'tab-harbor' && !depthFilled){
+      depthFilled = true;
+      requestAnimationFrame(function(){ document.getElementById('depthFill').classList.add('filled'); });
+    }
+  }
+  tabs.forEach(function(tab, i){
+    tab.addEventListener('click', function(){ selectTab(tab); });
+    tab.addEventListener('keydown', function(e){
+      var idx = i;
+      if (e.key === 'ArrowRight') idx = (i+1) % tabs.length;
+      else if (e.key === 'ArrowLeft') idx = (i-1+tabs.length) % tabs.length;
+      else return;
+      e.preventDefault();
+      selectTab(tabs[idx]);
+    });
+  });
+
+  /* ---------------- Calls / Echo demo ---------------- */
+  var seedCalls = [
+    { author: 'Théo Marsh', time: '2 tides ago', text: 'Left the porch light on for the first time this year. Felt like an announcement.', resonance: 1 },
+    { author: 'Unfinished Rooms', time: '5 hours ago', text: 'Grouted the last row of tile. Nobody will ever see it but me and the water.', resonance: 2 },
+    { author: 'Ary Kessler', time: '1 tide ago', text: 'Recorded the sound of the kettle instead of writing the thing I meant to write.', resonance: 0 },
+    { author: 'Slow Cinema', time: '9 hours ago', text: 'A whole scene of someone folding laundry. I did not skip it.', resonance: 3 }
+  ];
+  var resonanceWords = ['Faint', 'Faint', 'Rising', 'Rising', 'Deep', 'Deep'];
+
+  var callList = document.getElementById('callList');
+
+  function makeCallCard(call, prepend){
+    var li = document.createElement('li');
+    li.className = 'call-card' + (prepend ? ' new-call' : '');
+    var word = resonanceWords[Math.min(call.resonance, resonanceWords.length-1)];
+    li.innerHTML =
+      '<div class="call-top">' +
+        '<span class="call-author">' + call.author + '</span>' +
+        '<span class="call-time">' + call.time + '</span>' +
+      '</div>' +
+      '<p class="call-text">' + call.text + '</p>' +
+      '<div class="call-foot">' +
+        '<button class="echo-btn" type="button">' +
+          '<span class="ripple-wrap"><span class="ripple"></span></span>' +
+          'Send an echo' +
+        '</button>' +
+        '<span class="resonance">Resonance: <b class="res-word">' + word + '</b></span>' +
+        '<span class="sr-only" aria-live="polite" data-status></span>' +
+      '</div>';
+
+    var btn = li.querySelector('.echo-btn');
+    var rippleWrap = li.querySelector('.ripple-wrap');
+    var resWord = li.querySelector('.res-word');
+    var status = li.querySelector('[data-status]');
+
+    btn.addEventListener('click', function(){
+      call.resonance = Math.min(call.resonance + 1, resonanceWords.length - 1);
+      resWord.textContent = resonanceWords[call.resonance];
+      resWord.classList.remove('bump'); void resWord.offsetWidth; resWord.classList.add('bump');
+      var ripple = document.createElement('span');
+      ripple.className = 'ripple animate';
+      rippleWrap.appendChild(ripple);
+      ripple.addEventListener('animationend', function(){ ripple.remove(); });
+      status.textContent = 'Echo sent. This call is drifting a little deeper.';
+      burstConfetti(btn);
+    });
+
+    if (!reduceMotion && window.matchMedia('(hover: hover)').matches){
+      li.addEventListener('mousemove', function(e){
+        var r = li.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width - 0.5;
+        var py = (e.clientY - r.top) / r.height - 0.5;
+        li.style.transform = 'rotateX(' + (-py * 4) + 'deg) rotateY(' + (px * 4) + 'deg)';
+      });
+      li.addEventListener('mouseleave', function(){ li.style.transform = ''; });
+    }
+
+    if (prepend) callList.insertBefore(li, callList.firstChild);
+    else callList.appendChild(li);
+  }
+
+  seedCalls.forEach(function(c){ makeCallCard(c, false); });
+
+  var castBtn = document.getElementById('castBtn');
+  var callInput = document.getElementById('callInput');
+  var castTarget = document.getElementById('castTarget');
+  castBtn.addEventListener('click', function(){
+    var text = callInput.value.trim();
+    if (!text) { callInput.focus(); return; }
+    makeCallCard({
+      author: 'You',
+      time: 'just now · ' + castTarget.value.replace('Cast into ', ''),
+      text: text,
+      resonance: 0
+    }, true);
+    callInput.value = '';
+    burstConfetti(castBtn);
+  });
+
+  /* ---------------- Coves ---------------- */
+  var coves = [
+    { name: 'Late-Night Kitchens', desc: 'For calls cast after midnight, mostly about food.', depth: 'Mid-depth cove' },
+    { name: 'Slow Cinema', desc: 'Long takes, quiet scenes, films that refuse to hurry.', depth: 'Deep cove' },
+    { name: 'Unfinished Rooms', desc: 'Renovations, half-built shelves, work still in progress.', depth: 'Shallow, growing' },
+    { name: 'Tidal Ecology', desc: 'Field notes from people who watch the shoreline.', depth: 'Deep cove' },
+    { name: 'Letters Not Sent', desc: 'Calls written to someone who will never read them.', depth: 'Mid-depth cove' },
+    { name: 'Small Repairs', desc: 'Fixing things instead of replacing them.', depth: 'Shallow, growing' }
+  ];
+  var coveGrid = document.getElementById('coveGrid');
+  coves.forEach(function(c){
+    var div = document.createElement('div');
+    div.className = 'cove-card';
+    div.innerHTML =
+      '<h4>' + c.name + '</h4>' +
+      '<p>' + c.desc + '</p>' +
+      '<div class="cove-meta">' +
+        '<span class="cove-depth">' + c.depth + '</span>' +
+        '<button class="cast-here" type="button">Cast here</button>' +
+      '</div>';
+    var btn = div.querySelector('.cast-here');
+    btn.addEventListener('click', function(){
+      var joined = btn.classList.toggle('joined');
+      btn.textContent = joined ? 'Cast in' : 'Cast here';
+    });
+    if (!reduceMotion && window.matchMedia('(hover: hover)').matches){
+      div.addEventListener('mousemove', function(e){
+        var r = div.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width - 0.5;
+        var py = (e.clientY - r.top) / r.height - 0.5;
+        div.style.transform = 'rotateX(' + (-py * 6) + 'deg) rotateY(' + (px * 6) + 'deg) translateY(-3px)';
+      });
+      div.addEventListener('mouseleave', function(){ div.style.transform = ''; });
+    }
+    coveGrid.appendChild(div);
+  });
+
+  /* ---------------- Tide Lines ---------------- */
+  var tideLines = [
+    { name: 'Théo Marsh', sub: 'Mooring · 3 tides deep', msgs: [
+        {who:'them', text:'Sent you the tide chart for the inlet near Ary.'},
+        {who:'me', text:'Same current, different hour, I think.'},
+        {who:'them', text:'Worth checking at dawn either way.'}
+      ] },
+    { name: 'Ary Kessler', sub: 'Opened from a call in Slow Cinema', msgs: [
+        {who:'them', text:'That scene you mentioned — found it, you were right.'},
+        {who:'me', text:'Told you nothing happening could be the whole point.'}
+      ] },
+    { name: 'Unfinished Rooms (cove)', sub: 'Shared thread · 4 people', msgs: [
+        {who:'them', text:'Anyone know how to fix a sticking drawer without new hardware?'},
+        {who:'me', text:'Candle wax on the runners. Sounds fake, works every time.'}
+      ] }
+  ];
+  var tlContacts = document.getElementById('tlContacts');
+  var tlConv = document.getElementById('tlConv');
+
+  function renderConv(idx){
+    var t = tideLines[idx];
+    var html = '';
+    t.msgs.forEach(function(m){
+      html += '<div class="tl-msg ' + (m.who === 'me' ? 'me' : 'them') + '">' + m.text + '</div>';
+    });
+    tlConv.innerHTML =
+      '<div style="margin-bottom:14px;"><strong>' + t.name + '</strong><div style="color:var(--foam-dim); font-size:0.82rem;">' + t.sub + '</div></div>' +
+      html +
+      '<div class="tl-input-row">' +
+        '<label class="sr-only" for="tlInput">Reply on this Tide Line</label>' +
+        '<input id="tlInput" type="text" placeholder="Reply on this Tide Line…">' +
+        '<button type="button" id="tlSend">Send</button>' +
+      '</div>';
+
+    document.getElementById('tlSend').addEventListener('click', function(){
+      var input = document.getElementById('tlInput');
+      var val = input.value.trim();
+      if (!val) { input.focus(); return; }
+      t.msgs.push({who:'me', text: val});
+      renderConv(idx);
+    });
+  }
+
+  tideLines.forEach(function(t, i){
+    var btn = document.createElement('button');
+    btn.className = 'tl-contact';
+    btn.type = 'button';
+    btn.setAttribute('role','option');
+    btn.setAttribute('aria-current', i === 0 ? 'true' : 'false');
+    btn.innerHTML = '<span class="tl-name">' + t.name + '</span><span>' + t.sub + '</span>';
+    btn.addEventListener('click', function(){
+      Array.prototype.forEach.call(tlContacts.children, function(c){ c.setAttribute('aria-current','false'); });
+      btn.setAttribute('aria-current','true');
+      renderConv(i);
+    });
+    tlContacts.appendChild(btn);
+  });
+  renderConv(0);
+
+})();
+</script>
+</body>
+</html>
